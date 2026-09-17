@@ -1,0 +1,3 @@
+! Hide stock old Reddit until OldLander marks the body as ready.
+old.reddit.com##body:not(.background)
+old.reddit.com#%#(function(){try{var b=localStorage.getItem('oldlander-flash-background-v1')||(matchMedia('(prefers-color-scheme: light)').matches?'rgb(255, 251, 254)':'rgb(28, 27, 31)');var r=document.documentElement;r.style.setProperty('--oldlander-adguard-background',b);r.style.setProperty('background','var(--oldlander-adguard-background)','important');}catch(e){}})();

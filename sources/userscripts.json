@@ -13,14 +13,14 @@
       "category": "tools",
       "enabled": true,
       "target": "reddit",
-      "source": "https://update.greasyfork.org/scripts/423965/Good%20o%27l%20Reddit.user.js"
+      "source": "reddit/old-reddit.user.js"
     },
     "oldlander": {
       "category": "tools",
       "enabled": true,
       "platforms": ["ios"],
       "target": "reddit",
-      "source": "https://raw.githubusercontent.com/OctoNezd/oldlander/ada860d1a3caba19241615e7a9611b4d4cba0397/oldlander.remote.user.js"
+      "source": "reddit/oldlander.user.js"
     },
     "autocomplete-deck": {
       "category": "tools",
