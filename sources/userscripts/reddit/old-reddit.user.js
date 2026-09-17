@@ -2,7 +2,7 @@
 // @name         Old Reddit + Media Fixes
 // @description  Sends standard pages to old Reddit, preserves modern-only routes, displays comment images, and enables Safari's native video controls.
 // @author       littux, Spencer Ayers-Hale; combined and adapted for Safari Userscripts
-// @version      2.7.3
+// @version      2.7.4
 // @license      GPL-3.0-only
 // @match        *://*.reddit.com/*
 // @run-at       document-start
@@ -282,6 +282,17 @@
     ) {
       url.protocol = 'https:';
       url.hostname = MODERN_REDDIT_HOST;
+
+      // Modern Reddit canonicalizes /gallery/<id> to the post permalink.
+      // Preserve its lightbox hash through that redirect so clicking an
+      // old-Reddit gallery thumbnail opens the gallery viewer immediately.
+      if (
+        /^\/gallery\/[a-z0-9]+(?:\/|$)/i.test(url.pathname) &&
+        link.closest('.thing[data-is-gallery="true"]')
+      ) {
+        url.hash = '#lightbox';
+      }
+
       if (!hasModernBypassMarker(url)) {
         addModernBypassMarker(url);
       }
