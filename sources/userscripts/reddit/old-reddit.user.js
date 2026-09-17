@@ -2,7 +2,7 @@
 // @name         Old Reddit + Media Fixes
 // @description  Sends standard pages to old Reddit, preserves modern-only routes, displays comment images, and enables Safari's native video controls.
 // @author       littux, Spencer Ayers-Hale; combined and adapted for Safari Userscripts
-// @version      2.7.4
+// @version      2.7.5
 // @license      GPL-3.0-only
 // @match        *://*.reddit.com/*
 // @run-at       document-start
@@ -34,6 +34,7 @@
   const OLD_REDDIT_HOST = 'old.reddit.com';
   const MODERN_REDDIT_HOST = 'www.reddit.com';
   const MODERN_BYPASS_MARKER = 'old-reddit-modern';
+  const MODERN_LIGHTBOX_HASH = '#lightbox';
   const REDIRECTABLE_HOSTS = new Set([
     'reddit.com',
     'www.reddit.com',
@@ -290,13 +291,87 @@
         /^\/gallery\/[a-z0-9]+(?:\/|$)/i.test(url.pathname) &&
         link.closest('.thing[data-is-gallery="true"]')
       ) {
-        url.hash = '#lightbox';
+        url.hash = MODERN_LIGHTBOX_HASH;
       }
 
       if (!hasModernBypassMarker(url)) {
         addModernBypassMarker(url);
       }
       link.href = url.href;
+    }
+  }
+
+  function activateModernGalleryLightbox() {
+    if (
+      location.hostname !== MODERN_REDDIT_HOST ||
+      location.hash !== MODERN_LIGHTBOX_HASH
+    ) {
+      return;
+    }
+
+    let observer = null;
+    let timeout = null;
+    let scheduled = false;
+
+    function cleanup() {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      window.clearTimeout(timeout);
+    }
+
+    function tryActivate() {
+      if (
+        location.hostname !== MODERN_REDDIT_HOST ||
+        location.hash !== MODERN_LIGHTBOX_HASH
+      ) {
+        cleanup();
+        return true;
+      }
+
+      if (document.querySelector('button[aria-label="Close lightbox"]')) {
+        cleanup();
+        return true;
+      }
+
+      const carousel = document.querySelector(
+        'gallery-carousel[use-media-lightbox]',
+      );
+      const image =
+        carousel && carousel.querySelector('img.media-lightbox-img');
+      if (
+        !image ||
+        (window.customElements &&
+          !window.customElements.get('gallery-carousel')) ||
+        scheduled
+      ) {
+        return false;
+      }
+
+      scheduled = true;
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          if (
+            !document.querySelector('button[aria-label="Close lightbox"]') &&
+            document.contains(image) &&
+            location.hash === MODERN_LIGHTBOX_HASH
+          ) {
+            image.click();
+          }
+          cleanup();
+        });
+      });
+      return true;
+    }
+
+    observer = new MutationObserver(tryActivate);
+    observer.observe(document, { childList: true, subtree: true });
+    timeout = window.setTimeout(cleanup, 15000);
+    tryActivate();
+
+    if (window.customElements) {
+      window.customElements.whenDefined('gallery-carousel').then(tryActivate);
     }
   }
 
@@ -569,6 +644,7 @@
     return;
   }
   redirectOrdinaryPageToOldReddit();
+  activateModernGalleryLightbox();
 
   // Event delegation covers existing and dynamically loaded links without a
   // link-scanning MutationObserver. pointerdown handles normal, modified,
